@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Krishi — Smart Crop Recommendation</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Mono:wght@300;400;500&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --soil: #2c1810; --earth: #5c3d2e; --clay: #8b5e3c;
+    --straw: #c9a96e; --wheat: #e8d5a3; --cream: #f7f1e8;
+    --sage: #7a9e7e; --moss: #4a7c59; --forest: #2d5a3d;
+    --leaf: #a8c5a0; --sky: #b8d4e8; --dusk: #6b8fa8;
+    --sun: #f0a500; --harvest: #d46a1a; --accent: #e85d2a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--cream); color: var(--soil); font-family: 'Lora', serif; min-height: 100vh; overflow-x: hidden; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image:
+      radial-gradient(ellipse at 20% 80%, rgba(122,158,126,0.12) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, rgba(201,169,110,0.15) 0%, transparent 50%),
+      url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%235c3d2e' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0;
+  }
+
+  /* HEADER */
+  header { position: relative; z-index: 10; padding: 28px 48px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(92,61,46,0.15); gap: 16px; flex-wrap: wrap; }
+  .logo { display: flex; align-items: center; gap: 14px; }
+  .logo-mark { width: 42px; height: 42px; background: var(--forest); border-radius: 50% 50% 50% 10%; display: flex; align-items: center; justify-content: center; font-size: 20px; transform: rotate(-10deg); box-shadow: 3px 4px 0 var(--earth); flex-shrink: 0; }
+  .logo-text { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 900; color: var(--forest); letter-spacing: -0.5px; }
+  .logo-sub { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--clay); letter-spacing: 2px; text-transform: uppercase; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+
+  /* LANGUAGE TOGGLE */
+  .lang-toggle { display: flex; background: rgba(45,90,61,0.08); border: 1px solid rgba(45,90,61,0.2); border-radius: 100px; padding: 3px; gap: 2px; }
+  .lang-btn { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1px; padding: 5px 14px; border-radius: 100px; border: none; cursor: pointer; background: transparent; color: var(--clay); transition: all 0.2s ease; white-space: nowrap; }
+  .lang-btn.active { background: var(--forest); color: var(--leaf); }
+
+  .header-badge { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1.5px; color: var(--forest); background: rgba(45,90,61,0.1); border: 1px solid rgba(45,90,61,0.25); padding: 6px 16px; border-radius: 100px; text-transform: uppercase; white-space: nowrap; }
+
+  /* MAIN */
+  main { position: relative; z-index: 5; max-width: 1200px; margin: 0 auto; padding: 48px 48px 80px; }
+
+  /* HERO */
+  .hero { text-align: center; margin-bottom: 64px; }
+  .hero-eyebrow { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--clay); margin-bottom: 16px; opacity: 0; animation: fadeUp 0.6s ease forwards 0.1s; }
+  .hero h1 { font-family: 'Playfair Display', serif; font-size: clamp(38px, 6vw, 68px); font-weight: 900; line-height: 1.1; color: var(--soil); margin-bottom: 20px; opacity: 0; animation: fadeUp 0.7s ease forwards 0.2s; }
+  .hero h1 em { font-style: italic; color: var(--forest); }
+  .hero-desc { font-size: 18px; color: var(--earth); max-width: 520px; margin: 0 auto; line-height: 1.7; opacity: 0; animation: fadeUp 0.7s ease forwards 0.35s; }
+
+  /* FORM CARD */
+  .form-card { background: #fff; border: 1px solid rgba(92,61,46,0.12); border-radius: 24px; padding: 48px; box-shadow: 0 8px 48px rgba(44,24,16,0.08), 0 2px 8px rgba(44,24,16,0.04); opacity: 0; animation: fadeUp 0.8s ease forwards 0.5s; position: relative; overflow: hidden; }
+  .form-card::after { content: ''; position: absolute; top: 0; right: 0; width: 200px; height: 200px; background: radial-gradient(circle, rgba(122,158,126,0.08) 0%, transparent 70%); pointer-events: none; }
+  .form-section-title { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--straw); margin-bottom: 20px; margin-top: 32px; display: flex; align-items: center; gap: 12px; }
+  .form-section-title::after { content: ''; flex: 1; height: 1px; background: rgba(92,61,46,0.12); }
+  .form-section-title:first-child { margin-top: 0; }
+  .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; margin-bottom: 12px; }
+  .form-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 28px; margin-bottom: 12px; }
+  .form-group { display: flex; flex-direction: column; gap: 10px; }
+  label { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--clay); display: flex; align-items: center; gap: 8px; }
+  label .label-icon { font-size: 14px; }
+  input, select, textarea { font-family: 'Lora', serif; font-size: 15px; color: var(--soil); background: var(--cream); border: 1.5px solid rgba(92,61,46,0.18); border-radius: 12px; padding: 13px 16px; outline: none; transition: all 0.2s ease; appearance: none; -webkit-appearance: none; }
+  textarea { resize: vertical; min-height: 72px; }
+  input:focus, select:focus, textarea:focus { border-color: var(--moss); background: #fff; box-shadow: 0 0 0 3px rgba(74,124,89,0.1); }
+  input::placeholder, textarea::placeholder { color: var(--straw); }
+  .select-wrapper { position: relative; }
+  .select-wrapper::after { content: '▾'; position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--clay); pointer-events: none; font-size: 14px; }
+  .input-hint { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--straw); letter-spacing: 0.5px; }
+
+  /* SLIDERS */
+  .slider-group { display: flex; flex-direction: column; gap: 10px; }
+  .slider-row { display: flex; align-items: center; gap: 14px; }
+  input[type="range"] { flex: 1; -webkit-appearance: none; appearance: none; height: 4px; border-radius: 4px; outline: none; border: none; padding: 0; box-shadow: none; }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: var(--forest); cursor: pointer; border: 3px solid #fff; box-shadow: 0 2px 8px rgba(45,90,61,0.3); transition: transform 0.15s ease; }
+  input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+  .slider-val { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--forest); font-weight: 500; min-width: 52px; text-align: right; }
+
+  /* TOGGLE BUTTONS */
+  .toggle-group { display: flex; gap: 8px; }
+  .toggle-btn { flex: 1; padding: 10px 8px; border-radius: 10px; border: 1.5px solid rgba(92,61,46,0.18); background: var(--cream); color: var(--clay); font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all 0.2s ease; text-align: center; }
+  .toggle-btn:hover { border-color: var(--sage); color: var(--moss); }
+  .toggle-btn.active { background: var(--forest); color: var(--leaf); border-color: var(--forest); }
+
+  /* SUBMIT */
+  .submit-row { display: flex; justify-content: center; margin-top: 40px; }
+  .btn-analyze { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; color: var(--cream); background: var(--forest); border: none; padding: 18px 56px; border-radius: 100px; cursor: pointer; transition: all 0.25s ease; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 24px rgba(45,90,61,0.3), 0 2px 0 var(--soil) inset, 0 -3px 0 rgba(0,0,0,0.2) inset; }
+  .btn-analyze:hover { background: var(--moss); transform: translateY(-2px); }
+  .btn-analyze:active { transform: translateY(0); }
+  .btn-analyze.loading { pointer-events: none; opacity: 0.85; }
+  .btn-spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
+  .btn-analyze.loading .btn-spinner { display: block; }
+  .btn-analyze.loading .btn-label { opacity: 0.7; }
+
+  /* RESULTS */
+  #results { margin-top: 48px; opacity: 0; transform: translateY(20px); transition: all 0.6s ease; }
+  #results.visible { opacity: 1; transform: translateY(0); }
+  .results-header { display: flex; align-items: center; gap: 16px; margin-bottom: 32px; }
+  .results-header h2 { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 700; color: var(--soil); white-space: nowrap; }
+  .results-divider { flex: 1; height: 1px; background: linear-gradient(to right, rgba(92,61,46,0.2), transparent); }
+  .btn-reset { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--clay); background: none; border: none; cursor: pointer; letter-spacing: 1.5px; text-transform: uppercase; white-space: nowrap; }
+
+  /* TOP CROP CARD */
+  .top-crop-card { background: var(--forest); color: var(--cream); border-radius: 20px; padding: 36px 40px; margin-bottom: 28px; position: relative; overflow: hidden; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 24px; }
+  .top-crop-card::before { content: ''; position: absolute; right: -60px; top: -60px; width: 280px; height: 280px; background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%); }
+  .top-badge { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--leaf); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .top-badge::before { content: ''; display: inline-block; width: 20px; height: 1px; background: var(--sage); }
+  .top-crop-name { font-family: 'Playfair Display', serif; font-size: 44px; font-weight: 900; line-height: 1; margin-bottom: 12px; }
+  .top-crop-desc { font-size: 15px; color: rgba(247,241,232,0.75); line-height: 1.6; max-width: 520px; }
+  .top-crop-meta { display: flex; gap: 24px; margin-top: 16px; flex-wrap: wrap; }
+  .top-crop-meta span { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--leaf); letter-spacing: 1px; }
+
+  /* RING */
+  .confidence-ring { width: 110px; height: 110px; position: relative; flex-shrink: 0; }
+  .confidence-ring svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+  .ring-bg { fill: none; stroke: rgba(255,255,255,0.1); stroke-width: 8; }
+  .ring-fill { fill: none; stroke: var(--leaf); stroke-width: 8; stroke-linecap: round; stroke-dasharray: 283; stroke-dashoffset: 283; transition: stroke-dashoffset 1.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .ring-label { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: 'DM Mono', monospace; }
+  .ring-pct { font-size: 22px; font-weight: 500; color: #fff; }
+  .ring-text { font-size: 9px; color: var(--leaf); letter-spacing: 1px; text-transform: uppercase; }
+
+  /* STEPS */
+  .steps-section { background: #fff; border: 1px solid rgba(92,61,46,0.1); border-radius: 20px; padding: 36px 40px; margin-bottom: 28px; }
+  .section-heading { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: var(--soil); margin-bottom: 24px; }
+  .steps-list { display: flex; flex-direction: column; gap: 16px; }
+  .step-item { display: flex; gap: 16px; align-items: flex-start; }
+  .step-num { min-width: 32px; height: 32px; border-radius: 50%; background: var(--forest); color: var(--leaf); font-family: 'DM Mono', monospace; font-size: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+  .step-text { font-size: 15px; color: var(--earth); line-height: 1.6; padding-top: 4px; }
+
+  /* ALT CROPS */
+  .crops-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px; }
+  .crop-card { background: #fff; border: 1.5px solid rgba(92,61,46,0.1); border-radius: 16px; padding: 24px; transition: all 0.25s ease; }
+  .crop-card:hover { border-color: var(--sage); box-shadow: 0 4px 20px rgba(74,124,89,0.12); transform: translateY(-2px); }
+  .crop-card-rank { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1.5px; color: var(--straw); text-transform: uppercase; margin-bottom: 8px; }
+  .crop-card-name { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: var(--soil); margin-bottom: 6px; }
+  .crop-card-note { font-size: 13px; color: var(--earth); line-height: 1.5; margin-bottom: 14px; }
+  .score-bar-wrap { display: flex; align-items: center; gap: 10px; }
+  .score-bar { flex: 1; height: 5px; background: rgba(92,61,46,0.1); border-radius: 4px; overflow: hidden; }
+  .score-fill { height: 100%; border-radius: 4px; background: linear-gradient(to right, var(--sage), var(--moss)); width: 0%; transition: width 1s ease; }
+  .score-num { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--moss); font-weight: 500; }
+
+  /* INSIGHTS */
+  .insights-panel { background: var(--cream); border: 1px solid rgba(92,61,46,0.12); border-radius: 20px; padding: 36px 40px; margin-bottom: 28px; }
+  .insights-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .insight-item { display: flex; gap: 14px; align-items: flex-start; }
+  .insight-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; margin-top: 2px; }
+  .insight-icon.green { background: rgba(74,124,89,0.12); } .insight-icon.yellow { background: rgba(240,165,0,0.12); }
+  .insight-icon.blue { background: rgba(107,143,168,0.12); } .insight-icon.red { background: rgba(232,93,42,0.15); }
+  .insight-text strong { display: block; font-size: 14px; color: var(--soil); font-weight: 600; margin-bottom: 3px; }
+  .insight-text span { font-size: 13px; color: var(--earth); line-height: 1.5; font-family: 'Lora', serif; }
+
+  /* RISK */
+  .risk-panel { display: flex; align-items: flex-start; gap: 24px; background: #fff; border: 1px solid rgba(92,61,46,0.12); border-radius: 20px; padding: 28px 40px; margin-bottom: 28px; flex-wrap: wrap; }
+  .risk-col-label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--clay); margin-bottom: 8px; }
+  .risk-badge { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; padding: 8px 18px; border-radius: 100px; font-weight: 500; display: inline-block; }
+  .risk-low { background: rgba(74,124,89,0.12); color: var(--forest); } .risk-medium { background: rgba(240,165,0,0.12); color: #7a5500; } .risk-high { background: rgba(232,93,42,0.12); color: #8b2600; }
+  .risk-reason { font-size: 15px; color: var(--earth); line-height: 1.6; }
+
+  /* MARKETPLACE */
+  .market-panel { background: #fff; border: 1px solid rgba(92,61,46,0.12); border-radius: 20px; padding: 36px 40px; margin-bottom: 28px; }
+  .market-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .market-item { background: var(--cream); border: 1px solid rgba(92,61,46,0.1); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 6px; }
+  .market-name { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700; color: var(--soil); }
+  .market-use { font-size: 12px; color: var(--earth); line-height: 1.5; }
+  .market-price { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--forest); font-weight: 500; margin-top: 4px; }
+
+  /* LOADING */
+  .loading-overlay { display: none; flex-direction: column; align-items: center; justify-content: center; padding: 64px; gap: 20px; text-align: center; }
+  .loading-overlay.active { display: flex; }
+  .loading-fields.hidden { display: none; }
+  .loading-dots { display: flex; gap: 8px; align-items: center; }
+  .loading-dot { width: 10px; height: 10px; background: var(--moss); border-radius: 50%; animation: dotBounce 1.2s ease-in-out infinite; }
+  .loading-dot:nth-child(2) { animation-delay: 0.2s; background: var(--sage); }
+  .loading-dot:nth-child(3) { animation-delay: 0.4s; background: var(--leaf); }
+  .loading-msg { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--soil); font-style: italic; }
+  .loading-sub { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--clay); letter-spacing: 1.5px; text-transform: uppercase; }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes dotBounce { 0%,80%,100% { transform: scale(0.7); opacity: 0.5; } 40% { transform: scale(1.1); opacity: 1; } }
+
+  /* CROP ROTATION PANEL */
+  .rotation-panel { background: linear-gradient(135deg, rgba(45,90,61,0.06) 0%, rgba(122,158,126,0.08) 100%); border: 1.5px solid rgba(45,90,61,0.2); border-radius: 20px; padding: 36px 40px; margin-bottom: 28px; position: relative; overflow: hidden; }
+  .rotation-panel::before { content: '🔄'; position: absolute; right: 28px; top: 20px; font-size: 52px; opacity: 0.07; }
+  .rotation-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .rotation-header h3 { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: var(--soil); }
+  .rotation-badge { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; background: var(--forest); color: var(--leaf); padding: 4px 12px; border-radius: 100px; }
+  .rotation-flow { display: flex; align-items: center; gap: 0; margin-bottom: 24px; flex-wrap: wrap; }
+  .rotation-crop { text-align: center; padding: 16px 20px; background: #fff; border: 1.5px solid rgba(92,61,46,0.12); border-radius: 14px; min-width: 120px; transition: all 0.2s ease; }
+  .rotation-crop.prev { border-color: var(--harvest); background: rgba(212,106,26,0.06); }
+  .rotation-crop.next { border-color: var(--moss); background: rgba(74,124,89,0.08); }
+  .rotation-crop .r-emoji { font-size: 28px; margin-bottom: 6px; }
+  .rotation-crop .r-label { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--straw); margin-bottom: 4px; }
+  .rotation-crop .r-name { font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; color: var(--soil); }
+  .rotation-arrow { font-size: 22px; color: var(--sage); padding: 0 12px; flex-shrink: 0; }
+  .rotation-suggestions { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .rotation-suggestion { background: #fff; border: 1.5px solid rgba(74,124,89,0.2); border-radius: 14px; padding: 16px 18px; display: flex; gap: 12px; align-items: flex-start; }
+  .rotation-suggestion .rs-icon { font-size: 26px; flex-shrink: 0; }
+  .rotation-suggestion .rs-name { font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; color: var(--soil); margin-bottom: 3px; }
+  .rotation-suggestion .rs-desc { font-size: 12px; color: var(--earth); line-height: 1.5; }
+  .rotation-benefit { background: rgba(45,90,61,0.07); border-left: 3px solid var(--moss); border-radius: 0 10px 10px 0; padding: 14px 18px; font-size: 14px; color: var(--forest); line-height: 1.6; font-style: italic; }
+
+  /* DOWNLOAD REPORT BUTTON */
+  .download-row { display: flex; justify-content: center; margin-top: 12px; margin-bottom: 8px; }
+  .btn-download { font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--cream); background: var(--harvest); border: none; padding: 14px 36px; border-radius: 100px; cursor: pointer; transition: all 0.25s ease; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 20px rgba(212,106,26,0.3); }
+  .btn-download:hover { background: var(--accent); transform: translateY(-2px); box-shadow: 0 6px 28px rgba(212,106,26,0.4); }
+  .btn-download:active { transform: translateY(0); }
+  .btn-download svg { width: 16px; height: 16px; fill: currentColor; }
+  .btn-download.generating { pointer-events: none; opacity: 0.75; }
+
+  @media (max-width: 900px) { .form-grid { grid-template-columns: repeat(2,1fr); } .crops-grid { grid-template-columns: repeat(2,1fr); } .market-grid { grid-template-columns: repeat(2,1fr); } .insights-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 768px) { main,header { padding: 24px; } .form-grid,.form-grid-2 { grid-template-columns: 1fr; } .top-crop-card { grid-template-columns: 1fr; } .hero h1 { font-size: 36px; } .form-card,.steps-section,.market-panel,.insights-panel,.risk-panel,.rotation-panel { padding: 24px; } .top-crop-name { font-size: 32px; } .rotation-flow { gap: 4px; } }
+  @media (max-width: 480px) { .crops-grid,.market-grid { grid-template-columns: 1fr; } .rotation-suggestions { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">🌾</div>
+    <div>
+      <div class="logo-text">Krishi</div>
+      <div class="logo-sub" id="logoSub">स्मार्ट फसल सिफारिश प्रणाली</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="lang-toggle">
+      <button class="lang-btn active" id="btnHi" onclick="setLang('hi')">हिंदी</button>
+      <button class="lang-btn" id="btnEn" onclick="setLang('en')">English</button>
+    </div>
+    <div class="header-badge" id="hdrBadge">✦ AI-संचालित</div>
+  </div>
+</header>
+
+<main>
+  <div class="hero">
+    <p class="hero-eyebrow" id="heroEyebrow">✦ भारतीय किसानों के लिए स्मार्ट खेती ✦</p>
+    <h1 id="heroTitle">सही <em>फसल चुनें,</em><br>सही मौसम में।</h1>
+    <p class="hero-desc" id="heroDesc">अपने खेत की जानकारी भरें और AI से पाएं — सबसे अच्छी फसल, कदम-दर-कदम गाइड और मुनाफे का अनुमान।</p>
+  </div>
+
+  <div class="form-card">
+    <div class="loading-fields" id="formFields">
+
+      <div class="form-section-title" id="sec1">खेत की बुनियादी जानकारी</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label><span class="label-icon">🪨</span> <span id="lSoil">मिट्टी का प्रकार</span></label>
+          <div class="select-wrapper">
+            <select id="soil">
+              <option value="" id="optSoilDef">चुनें…</option>
+              <option value="Black Cotton Soil">काली मिट्टी / Black Cotton Soil</option>
+              <option value="Red Laterite Soil">लाल मिट्टी / Red Laterite Soil</option>
+              <option value="Sandy Soil">रेतीली मिट्टी / Sandy Soil</option>
+              <option value="Loamy Soil">दोमट मिट्टी / Loamy Soil</option>
+              <option value="Clay Soil">चिकनी मिट्टी / Clay Soil</option>
+              <option value="Hill Soil">पहाड़ी मिट्टी / Hill Soil</option>
+              <option value="Alluvial Soil">जलोढ़ मिट्टी / Alluvial Soil</option>
+              <option value="Peaty Soil">Peaty Soil</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label><span class="label-icon">🌤</span> <span id="lClimate">मौसम / ऋतु</span></label>
+          <div class="select-wrapper">
+            <select id="climate">
+              <option value="" id="optClimateDef">चुनें…</option>
+              <option value="Kharif (June–October)">खरीफ / Kharif (June–October)</option>
+              <option value="Rabi (October–March)">रबी / Rabi (October–March)</option>
+              <option value="Zaid (March–June)">जायद / Zaid (March–June)</option>
+              <option value="Hot and Dry">गर्म-शुष्क / Hot and Dry</option>
+              <option value="Cold and Humid">ठंडा-नम / Cold and Humid</option>
+              <option value="Monsoon">मानसून / Monsoon</option>
+              <option value="Tropical Wet">Tropical Wet</option>
+              <option value="Arid / Semi-Arid">Arid / Semi-Arid</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label><span class="label-icon">📍</span> <span id="lRegion">राज्य / क्षेत्र</span></label>
+          <div class="select-wrapper">
+            <select id="region">
+              <option value="" id="optRegionDef">चुनें…</option>
+              <option>Punjab / पंजाब</option><option>Haryana / हरियाणा</option>
+              <option>Uttar Pradesh / उत्तर प्रदेश</option><option>Rajasthan / राजस्थान</option>
+              <option>Madhya Pradesh / मध्य प्रदेश</option><option>Maharashtra / महाराष्ट्र</option>
+              <option>Gujarat / गुजरात</option><option>Bihar / बिहार</option>
+              <option>West Bengal / पश्चिम बंगाल</option><option>Andhra Pradesh / आंध्र प्रदेश</option>
+              <option>Tamil Nadu / तमिलनाडु</option><option>Karnataka / कर्नाटक</option>
+              <option>Telangana / तेलंगाना</option><option>Odisha / ओडिशा</option>
+              <option>Jharkhand / झारखंड</option><option>Chhattisgarh / छत्तीसगढ़</option>
+              <option>Uttarakhand / उत्तराखंड</option><option>Himachal Pradesh / हिमाचल</option>
+              <option>Assam / असम</option><option>Kerala / केरल</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section-title" id="sec2">मिट्टी और पानी की स्थिति</div>
+      <div class="form-grid">
+        <div class="form-group slider-group">
+          <label><span class="label-icon">🌡</span> <span id="lTemp">तापमान (°C)</span></label>
+          <div class="slider-row">
+            <input type="range" id="temperature" min="5" max="50" value="28" step="1" oninput="updateSlider(this,'T')">
+            <span class="slider-val" id="T-val">28 °C</span>
+          </div>
+          <span class="input-hint" id="hintTemp">औसत तापमान</span>
+        </div>
+        <div class="form-group slider-group">
+          <label><span class="label-icon">💧</span> <span id="lHumid">नमी (%)</span></label>
+          <div class="slider-row">
+            <input type="range" id="humidity" min="10" max="100" value="60" step="1" oninput="updateSlider(this,'H')">
+            <span class="slider-val" id="H-val">60 %</span>
+          </div>
+        </div>
+        <div class="form-group slider-group">
+          <label><span class="label-icon">🌧</span> <span id="lRain">वर्षा (mm/वर्ष)</span></label>
+          <div class="slider-row">
+            <input type="range" id="rainfall" min="100" max="3000" value="800" step="50" oninput="updateSlider(this,'R')">
+            <span class="slider-val" id="R-val">800 mm</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-grid-2" style="margin-bottom:28px;margin-top:12px;">
+        <div class="form-group">
+          <label><span class="label-icon">🌱</span> <span id="lFert">मिट्टी की उपजाऊ शक्ति</span></label>
+          <div class="toggle-group" id="fertGroup">
+            <button class="toggle-btn" id="tFertL" data-group="fertility" data-val="Low" onclick="setToggle(this)">कम</button>
+            <button class="toggle-btn active" id="tFertM" data-group="fertility" data-val="Medium" onclick="setToggle(this)">मध्यम</button>
+            <button class="toggle-btn" id="tFertH" data-group="fertility" data-val="High" onclick="setToggle(this)">अच्छी</button>
+          </div>
+          <input type="hidden" id="fertility" value="Medium">
+        </div>
+        <div class="form-group">
+          <label><span class="label-icon">🚿</span> <span id="lWater">पानी की उपलब्धता</span></label>
+          <div class="toggle-group">
+            <button class="toggle-btn" id="tWaterL" data-group="water" data-val="Low" onclick="setToggle(this)">कम</button>
+            <button class="toggle-btn active" id="tWaterM" data-group="water" data-val="Medium" onclick="setToggle(this)">मध्यम</button>
+            <button class="toggle-btn" id="tWaterH" data-group="water" data-val="High" onclick="setToggle(this)">भरपूर</button>
+          </div>
+          <input type="hidden" id="water" value="Medium">
+        </div>
+      </div>
+
+      <div class="form-section-title" id="sec3">अतिरिक्त जानकारी</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label><span class="label-icon">📐</span> <span id="lField">खेत का क्षेत्रफल (एकड़)</span></label>
+          <input type="number" id="fieldSize" placeholder="जैसे: 2.5" min="0.1" step="0.1">
+          <span class="input-hint" id="hintField">मुनाफे का अनुमान लगाने के लिए</span>
+        </div>
+        <div class="form-group">
+          <label><span class="label-icon">🔄</span> <span id="lPrevCrop">पिछली फसल (Crop Rotation)</span></label>
+          <div class="select-wrapper">
+            <select id="prevCrop">
+              <option value="" id="optPrevCropDef">चुनें…</option>
+              <option value="Rice">धान / Rice</option>
+              <option value="Wheat">गेहूं / Wheat</option>
+              <option value="Maize">मक्का / Maize</option>
+              <option value="Sugarcane">गन्ना / Sugarcane</option>
+              <option value="Cotton">कपास / Cotton</option>
+              <option value="Soybean">सोयाबीन / Soybean</option>
+              <option value="Pulses">दलहन / Pulses</option>
+              <option value="Vegetables">सब्जियां / Vegetables</option>
+              <option value="Other">अन्य / Other</option>
+            </select>
+          </div>
+          <span class="input-hint" id="hintPrevCrop">फसल चक्र सलाह के लिए</span>
+        </div>
+        <div class="form-group">
+          <label><span class="label-icon">📝</span> <span id="lNotes">कोई खास बात</span></label>
+          <input type="text" id="notes" placeholder="जैसे: जलभराव होता है…">
+          <span class="input-hint" id="hintNotes">वैकल्पिक — बेहतर सलाह के लिए</span>
+        </div>
+      </div>
+
+      <div class="submit-row">
+        <button class="btn-analyze" id="analyzeBtn" onclick="analyze()">
+          <span class="btn-spinner"></span>
+          <span class="btn-label" id="btnLabel">खेत का विश्लेषण करें →</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay">
+      <div class="loading-dots">
+        <div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div>
+      </div>
+      <div class="loading-msg" id="loadingMsg">खेत की जानकारी जांची जा रही है…</div>
+      <div class="loading-sub" id="loadingStep"></div>
+    </div>
+  </div>
+
+  <div id="results">
+    <div class="results-header">
+      <h2 id="resultsTitle">फसल विश्लेषण परिणाम</h2>
+      <div class="results-divider"></div>
+      <button class="btn-reset" id="btnReset" onclick="resetForm()">↩ नया विश्लेषण</button>
+    </div>
+    <div id="resultsContent"></div>
+  </div>
+</main>
+
+<script>
+let currentLang = 'hi';
+let lastResult = null;
+let lastFormData = {};
+
+const STRINGS = {
+  hi: {
+    logoSub: 'स्मार्ट फसल सिफारिश प्रणाली', hdrBadge: '✦ AI-संचालित',
+    heroEyebrow: '✦ भारतीय किसानों के लिए स्मार्ट खेती ✦',
+    heroTitle: 'सही <em>फसल चुनें,</em><br>सही मौसम में।',
+    heroDesc: 'अपने खेत की जानकारी भरें और AI से पाएं — सबसे अच्छी फसल, कदम-दर-कदम गाइड और मुनाफे का अनुमान।',
+    sec1: 'खेत की बुनियादी जानकारी', sec2: 'मिट्टी और पानी की स्थिति', sec3: 'अतिरिक्त जानकारी',
+    lSoil: 'मिट्टी का प्रकार', lClimate: 'मौसम / ऋतु', lRegion: 'राज्य / क्षेत्र',
+    lTemp: 'तापमान (°C)', lHumid: 'नमी (%)', lRain: 'वर्षा (mm/वर्ष)',
+    lFert: 'मिट्टी की उपजाऊ शक्ति', lWater: 'पानी की उपलब्धता',
+    lField: 'खेत का क्षेत्रफल (एकड़)', lNotes: 'कोई खास बात',
+    hintTemp: 'औसत तापमान', hintField: 'मुनाफे का अनुमान लगाने के लिए', hintNotes: 'वैकल्पिक — बेहतर सलाह के लिए',
+    tFertL: 'कम', tFertM: 'मध्यम', tFertH: 'अच्छी',
+    tWaterL: 'कम', tWaterM: 'मध्यम', tWaterH: 'भरपूर',
+    btnLabel: 'खेत का विश्लेषण करें →',
+    loadingMsg: 'खेत की जानकारी जांची जा रही है…',
+    loadingSteps: ['मिट्टी का विश्लेषण हो रहा है…','मौसम के अनुसार फसल मिलाई जा रही है…','पानी की जरूरत का अनुमान…','मुनाफे का हिसाब लगाया जा रहा है…','सबसे अच्छी सलाह तैयार हो रही है…'],
+    optDef: 'चुनें…',
+    fieldPlaceholder: 'जैसे: 2.5', notesPlaceholder: 'जैसे: पिछले साल धान था, जलभराव होता है…',
+    resultsTitle: 'फसल विश्लेषण परिणाम', btnReset: '↩ नया विश्लेषण',
+    topBadge: 'सबसे अच्छी फसल', ringText: 'मेल',
+    altRanks: ['#2 विकल्प','#3 विकल्प','#4 विकल्प','#5 विकल्प','#6 विकल्प','#7 विकल्प'],
+    stepsTitle: '📋 कदम-दर-कदम खेती गाइड',
+    insightsTitle: '🔍 खेत की जानकारी और सलाह',
+    riskLevelLabel: 'जोखिम स्तर', riskReasonLabel: 'कारण',
+    riskLow: 'कम जोखिम', riskMed: 'मध्यम जोखिम', riskHigh: 'ज्यादा जोखिम',
+    marketTitle: '🛒 क्या खरीदना होगा',
+    profitLabel: '💰 मुनाफा:', costLabel: '🏷️ लागत:',
+    alertMsg: 'कृपया मिट्टी का प्रकार, मौसम और राज्य जरूर भरें।',
+    promptLangInstr: 'All JSON text values MUST be in simple conversational Hindi (रोज़मर्रा की हिंदी). Avoid English words except crop names and units.',
+    lPrevCrop: 'पिछली फसल (Crop Rotation)', hintPrevCrop: 'फसल चक्र सलाह के लिए',
+    optPrevCropDef: 'चुनें…',
+    rotationTitle: '🔄 फसल चक्र सलाह', rotationBadge: 'Crop Rotation',
+    rotationPrevLabel: 'पिछली फसल', rotationNextLabel: 'अगली फसल (सुझाव)',
+    rotationBenefitLabel: '🌱 मिट्टी की सेहत:',
+    downloadBtn: '⬇ PDF रिपोर्ट डाउनलोड करें', downloadingBtn: 'तैयार हो रही है…'
+  },
+  en: {
+    logoSub: 'Smart Crop Recommendation System', hdrBadge: '✦ AI-Powered',
+    heroEyebrow: '✦ Precision Agriculture Intelligence ✦',
+    heroTitle: 'Grow the <em>right crop,</em><br>in the right soil.',
+    heroDesc: 'Enter your field conditions and let AI analyse the optimal crop choices for maximum yield and profit.',
+    sec1: 'Basic Field Information', sec2: 'Soil & Environmental Conditions', sec3: 'Additional Information',
+    lSoil: 'Soil Type', lClimate: 'Climate / Season', lRegion: 'Region / State',
+    lTemp: 'Temperature (°C)', lHumid: 'Humidity (%)', lRain: 'Rainfall (mm/year)',
+    lFert: 'Soil Fertility', lWater: 'Water Availability',
+    lField: 'Field Area (acres)', lNotes: 'Special Conditions',
+    hintTemp: 'Average field temperature', hintField: 'Optional — for yield estimation', hintNotes: 'Optional — helps personalise advice',
+    tFertL: 'Low', tFertM: 'Medium', tFertH: 'High',
+    tWaterL: 'Low', tWaterM: 'Medium', tWaterH: 'High',
+    btnLabel: 'Analyse My Field →',
+    loadingMsg: 'Consulting the field intelligence…',
+    loadingSteps: ['Analysing soil composition…','Matching climate patterns…','Evaluating water requirements…','Running yield prediction models…','Generating personalised recommendations…'],
+    optDef: 'Select…',
+    fieldPlaceholder: 'e.g. 2.5', notesPlaceholder: 'e.g. near river, drought-prone, last crop was wheat…',
+    resultsTitle: 'Field Analysis Results', btnReset: '↩ New Analysis',
+    topBadge: 'Top Recommendation', ringText: 'Match',
+    altRanks: ['#2 Option','#3 Option','#4 Option','#5 Option','#6 Option','#7 Option'],
+    stepsTitle: '📋 Step-by-Step Farming Guide',
+    insightsTitle: '🔍 Field Insights & Advice',
+    riskLevelLabel: 'Risk Level', riskReasonLabel: 'Reason',
+    riskLow: 'Low Risk', riskMed: 'Medium Risk', riskHigh: 'High Risk',
+    marketTitle: '🛒 What to Buy',
+    profitLabel: '💰 Profit:', costLabel: '🏷️ Cost:',
+    alertMsg: 'Please select soil type, season and state/region.',
+    promptLangInstr: 'All JSON text values must be in clear, practical English.',
+    lPrevCrop: 'Previous Crop (for Rotation)', hintPrevCrop: 'Helps generate crop rotation advice',
+    optPrevCropDef: 'Select…',
+    rotationTitle: '🔄 Crop Rotation Advice', rotationBadge: 'Soil Health',
+    rotationPrevLabel: 'Previous Crop', rotationNextLabel: 'Recommended Next',
+    rotationBenefitLabel: '🌱 Soil Fertility Impact:',
+    downloadBtn: '⬇ Download PDF Report', downloadingBtn: 'Generating…'
+  }
+};
+
+function setLang(lang) {
+  currentLang = lang;
+  document.getElementById('btnHi').classList.toggle('active', lang === 'hi');
+  document.getElementById('btnEn').classList.toggle('active', lang === 'en');
+  const s = STRINGS[lang];
+  // Update all text elements by id
+  const ids = ['logoSub','hdrBadge','heroEyebrow','heroDesc','sec1','sec2','sec3','lSoil','lClimate','lRegion','lTemp','lHumid','lRain','lFert','lWater','lField','lNotes','hintTemp','hintField','hintNotes','tFertL','tFertM','tFertH','tWaterL','tWaterM','tWaterH','btnLabel','loadingMsg','resultsTitle','btnReset','lPrevCrop','hintPrevCrop'];
+  ids.forEach(id => { const el = document.getElementById(id); if(el && s[id] !== undefined) el.textContent = s[id]; });
+  // innerHTML for hero title (has em tag)
+  document.getElementById('heroTitle').innerHTML = s.heroTitle;
+  // Placeholders
+  document.getElementById('fieldSize').placeholder = s.fieldPlaceholder;
+  document.getElementById('notes').placeholder = s.notesPlaceholder;
+  // Select default options
+  ['optSoilDef','optClimateDef','optRegionDef','optPrevCropDef'].forEach(id => { const el = document.getElementById(id); if(el) el.textContent = s.optDef; });
+}
+
+function setToggle(btn) {
+  const group = btn.dataset.group;
+  document.querySelectorAll(`.toggle-btn[data-group="${group}"]`).forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(group).value = btn.dataset.val;
+}
+
+function updateSlider(el, id) {
+  const fmt = { T: v => `${v} °C`, H: v => `${v} %`, R: v => `${v} mm` };
+  document.getElementById(`${id}-val`).textContent = fmt[id](el.value);
+  const pct = ((parseFloat(el.value) - parseFloat(el.min)) / (parseFloat(el.max) - parseFloat(el.min))) * 100;
+  el.style.background = `linear-gradient(to right, var(--moss) 0%, var(--moss) ${pct}%, rgba(92,61,46,0.15) ${pct}%)`;
+}
+
+document.querySelectorAll('input[type="range"]').forEach(el => {
+  const pct = ((parseFloat(el.value) - parseFloat(el.min)) / (parseFloat(el.max) - parseFloat(el.min))) * 100;
+  el.style.background = `linear-gradient(to right, var(--moss) 0%, var(--moss) ${pct}%, rgba(92,61,46,0.15) ${pct}%)`;
+});
+
+async function analyze() {
+  const soil = document.getElementById('soil').value;
+  const climate = document.getElementById('climate').value;
+  const region = document.getElementById('region').value;
+  const fertility = document.getElementById('fertility').value;
+  const water = document.getElementById('water').value;
+  const temp = document.getElementById('temperature').value;
+  const humidity = document.getElementById('humidity').value;
+  const rainfall = document.getElementById('rainfall').value;
+  const fieldSize = document.getElementById('fieldSize').value;
+  const notes = document.getElementById('notes').value;
+  const prevCrop = document.getElementById('prevCrop').value;
+  const s = STRINGS[currentLang];
+
+  if (!soil || !climate || !region) { alert(s.alertMsg); return; }
+
+  lastFormData = { soil, climate, region, fertility, water, temp, humidity, rainfall, fieldSize, notes, prevCrop };
+
+  const btn = document.getElementById('analyzeBtn');
+  btn.classList.add('loading');
+  document.getElementById('formFields').classList.add('hidden');
+  document.getElementById('loadingOverlay').classList.add('active');
+  document.getElementById('loadingMsg').textContent = s.loadingMsg;
+
+  let stepIdx = 0;
+  const stepEl = document.getElementById('loadingStep');
+  stepEl.textContent = s.loadingSteps[0];
+  const stepTimer = setInterval(() => { stepIdx = (stepIdx + 1) % s.loadingSteps.length; stepEl.textContent = s.loadingSteps[stepIdx]; }, 1200);
+
+  const isHi = currentLang === 'hi';
+
+  const prompt = `You are an expert agricultural advisor for Indian farmers with deep knowledge of all crop categories.
+${s.promptLangInstr}
+
+Field Details:
+- Soil Type: ${soil}
+- Climate/Season: ${climate}
+- Region/State: ${region}
+- Soil Fertility: ${fertility}
+- Water Availability: ${water}
+- Temperature: ${temp}°C
+- Humidity: ${humidity}%
+- Annual Rainfall: ${rainfall} mm
+${fieldSize ? `- Field Size: ${fieldSize} acres` : ''}
+${prevCrop ? `- Previous Crop (last season): ${prevCrop}` : ''}
+${notes ? `- Special Conditions: ${notes}` : ''}
+
+CRITICAL INSTRUCTIONS:
+1. You MUST recommend the BEST crop specifically suited to the above conditions — do NOT default to rice unless conditions genuinely suit it.
+2. Consider ALL crop categories: cereals (wheat, maize, sorghum, bajra, barley), pulses (chickpea, lentil, moong, arhar), oilseeds (mustard, sunflower, groundnut, sesame), cash crops (sugarcane, cotton, jute), vegetables (onion, potato, tomato, chilli), fruits (mango, banana, papaya), spices (turmeric, ginger, coriander), fodder crops.
+3. Match crop to soil type precisely: Black soil → cotton/soybean/wheat; Sandy → groundnut/bajra/sesame; Clay → rice/sugarcane; Loamy → wheat/maize/vegetables; Red → groundnut/maize/finger millet; Hill soil → apple/potato/vegetables; Alluvial → wheat/sugarcane/vegetables.
+4. Match to season: Kharif → rice/maize/cotton/soybean/groundnut/bajra; Rabi → wheat/mustard/chickpea/lentil/potato; Zaid → cucumber/watermelon/maize/moong.
+5. Match to rainfall: <400mm → bajra/sorghum/groundnut/mustard; 400-800mm → wheat/maize/soybean; 800-1500mm → rice/sugarcane/cotton; >1500mm → rice/jute/banana.
+6. Match to temperature: <15°C → wheat/barley/mustard/potato; 15-25°C → wheat/maize/vegetables; 25-35°C → rice/cotton/groundnut; >35°C → bajra/sorghum/sesame.
+7. Provide EXACTLY 6 alternative crops in the alternatives array.
+8. The confidence score should reflect genuine suitability (can range from 55-96%).
+
+Respond ONLY with a valid JSON object (no markdown, no backticks, no extra text). Structure:
+{
+  "topCrop": {
+    "name": "crop name",
+    "confidence": 87,
+    "emoji": "🌾",
+    "why": "${isHi ? '2 sentences in simple Hindi explaining why this specific crop fits these exact conditions' : '2 sentences explaining why this crop specifically fits the given soil, temperature, rainfall and season'}",
+    "profit": "${isHi ? '₹X,XXX–₹X,XXX प्रति एकड़' : '₹X,XXX–₹X,XXX per acre'}",
+    "cost": "${isHi ? '₹X,XXX प्रति एकड़' : '₹X,XXX per acre'}",
+    "season": "${isHi ? 'बोने का सही समय और अवधि' : 'Best sowing time and crop duration'}"
+  },
+  "alternatives": [
+    { "name": "crop 2", "emoji": "🌿", "score": 76, "note": "${isHi ? 'one sentence in Hindi on suitability' : 'one sentence on suitability'}" },
+    { "name": "crop 3", "emoji": "🌱", "score": 70, "note": "..." },
+    { "name": "crop 4", "emoji": "🌻", "score": 64, "note": "..." },
+    { "name": "crop 5", "emoji": "🥜", "score": 58, "note": "..." },
+    { "name": "crop 6", "emoji": "🫘", "score": 53, "note": "..." },
+    { "name": "crop 7", "emoji": "🍅", "score": 48, "note": "..." }
+  ],
+  "steps": [
+    "${isHi ? 'Step 1 in Hindi — specific to recommended crop' : 'Step 1 — specific to recommended crop'}",
+    "${isHi ? 'Step 2' : 'Step 2'}",
+    "${isHi ? 'Step 3' : 'Step 3'}",
+    "${isHi ? 'Step 4' : 'Step 4'}",
+    "${isHi ? 'Step 5' : 'Step 5'}",
+    "${isHi ? 'Step 6' : 'Step 6'}"
+  ],
+  "insights": [
+    { "type": "green", "icon": "✅", "title": "${isHi ? 'अनुकूल परिस्थिति' : 'Favourable Condition'}", "text": "${isHi ? 'text in Hindi' : 'text in English'}" },
+    { "type": "yellow", "icon": "⚠️", "title": "${isHi ? 'ध्यान रखें' : 'Caution'}", "text": "..." },
+    { "type": "blue", "icon": "💧", "title": "${isHi ? 'पानी प्रबंधन' : 'Water Management'}", "text": "..." },
+    { "type": "red", "icon": "🌱", "title": "${isHi ? 'मिट्टी सुधार' : 'Soil Amendment'}", "text": "..." }
+  ],
+  "risk": { "level": "Low", "reason": "${isHi ? 'reason in simple Hindi' : 'reason in English'}" },
+  "marketplace": [
+    { "item": "item name", "use": "${isHi ? 'use in Hindi' : 'use in English'}", "approx_price": "₹XXX" },
+    { "item": "item name", "use": "...", "approx_price": "₹XXX" },
+    { "item": "item name", "use": "...", "approx_price": "₹XXX" },
+    { "item": "item name", "use": "...", "approx_price": "₹XXX" }
+  ]${prevCrop ? `,
+  "rotation": {
+    "suggestions": [
+      { "name": "suggested crop 1", "emoji": "🌿", "reason": "${isHi ? 'why this crop should follow in Hindi' : 'why this crop should follow'}" },
+      { "name": "suggested crop 2", "emoji": "🌾", "reason": "${isHi ? 'why in Hindi' : 'why'}" }
+    ],
+    "soilBenefit": "${isHi ? '2 sentences in Hindi on how this rotation improves soil fertility, nitrogen fixation, pest break etc.' : '2 sentences on how this rotation improves soil health, nitrogen fixation, and pest cycle breaks'}"
+  }` : ''}
+}`;
+
+  try {
+    const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 2500, messages: [{ role: "user", content: prompt }] })
+    });
+    const data = await resp.json();
+    const raw = data.content.map(i => i.text || '').join('');
+    // Robust JSON extraction: find first { to last }
+    const start = raw.indexOf('{');
+    const end = raw.lastIndexOf('}');
+    if (start === -1 || end === -1) throw new Error('No JSON found');
+    const jsonStr = raw.slice(start, end + 1);
+    const result = JSON.parse(jsonStr);
+    clearInterval(stepTimer);
+    lastResult = result;
+    showResults(result);
+  } catch(err) {
+    clearInterval(stepTimer);
+    console.error('Krishi API error:', err);
+    lastResult = getFallback(soil, climate, region, temp, humidity, rainfall, fertility, water);
+    showResults(lastResult);
+  }
+  btn.classList.remove('loading');
+}
+
+function getFallback(soil, climate, region, temp, humidity, rainfall, fertility, water) {
+  const isHi = currentLang === 'hi';
+  // Smart crop selection based on conditions
+  const t = parseFloat(temp) || 28;
+  const r = parseFloat(rainfall) || 800;
+  const h = parseFloat(humidity) || 60;
+  const s = (soil || '').toLowerCase();
+  const c = (climate || '').toLowerCase();
+
+  let topName, topEmoji, topWhy, topProfit, topCost, topSeason, topConf;
+  let alts = [];
+
+  // Decision logic based on multiple factors
+  if (c.includes('rabi') || c.includes('october') || t < 20) {
+    // Rabi season or cold conditions
+    if (s.includes('sandy') || s.includes('रेत') || r < 400) {
+      topName = isHi ? "सरसों (Mustard)" : "Mustard"; topEmoji = "🌻"; topConf = 84;
+      topWhy = isHi ? "रबी मौसम और रेतीली मिट्टी में सरसों सबसे अच्छी फसल है। कम पानी में भी अच्छी पैदावार होती है।" : "Mustard thrives in Rabi season with sandy soil and low rainfall. Excellent oil yield with minimal water needs.";
+      topProfit = isHi ? "₹20,000–₹28,000 प्रति एकड़" : "₹20,000–₹28,000 per acre";
+      topCost = isHi ? "₹6,000–₹8,000 प्रति एकड़" : "₹6,000–₹8,000 per acre";
+      topSeason = isHi ? "अक्टूबर–नवंबर में बुवाई, फरवरी–मार्च में कटाई" : "Sow Oct–Nov, harvest Feb–Mar (110–120 days)";
+      alts = [
+        { name: isHi?"गेहूं":"Wheat", emoji:"🌾", score:79, note: isHi?"रबी की मुख्य फसल, अच्छी मांग और सरकारी समर्थन मूल्य।":"Primary Rabi crop with strong MSP support and reliable market." },
+        { name: isHi?"चना (Chickpea)":"Chickpea", emoji:"🫘", score:72, note: isHi?"मिट्टी में नाइट्रोजन बढ़ाता है और कम पानी में ठीक रहता है।":"Nitrogen-fixer, drought-tolerant, and fetches good market price." },
+        { name: isHi?"मसूर":"Lentil", emoji:"🟤", score:65, note: isHi?"ठंड में अच्छा उगता है, दाल की बाज़ार में अच्छी मांग।":"Grows well in cold, high demand in pulse markets." },
+        { name: isHi?"जौ (Barley)":"Barley", emoji:"🌾", score:60, note: isHi?"कम लागत, कम पानी, बीयर और पशुचारे में उपयोग।":"Low input, drought hardy, used in brewing and animal feed." },
+        { name: isHi?"आलू":"Potato", emoji:"🥔", score:55, note: isHi?"ठंड में उगता है, नकदी फसल के रूप में अच्छा।":"Cool season crop with strong cash value in local markets." },
+        { name: isHi?"मटर":"Pea", emoji:"🫛", score:50, note: isHi?"जल्दी तैयार होती है, सब्जी बाज़ार में अच्छा भाव।":"Fast-maturing, excellent returns in vegetable markets." }
+      ];
+    } else {
+      topName = isHi ? "गेहूं (Wheat)" : "Wheat"; topEmoji = "🌾"; topConf = 88;
+      topWhy = isHi ? "रबी मौसम और दोमट/जलोढ़ मिट्टी में गेहूं सबसे उपयुक्त फसल है। तापमान और नमी इसके लिए एकदम सही है।" : "Wheat is the ideal Rabi crop for your soil and temperature. Government MSP ensures price stability and consistent returns.";
+      topProfit = isHi ? "₹22,000–₹32,000 प्रति एकड़" : "₹22,000–₹32,000 per acre";
+      topCost = isHi ? "₹8,000–₹11,000 प्रति एकड़" : "₹8,000–₹11,000 per acre";
+      topSeason = isHi ? "नवंबर में बुवाई, मार्च–अप्रैल में कटाई" : "Sow Nov, harvest Mar–Apr (120–130 days)";
+      alts = [
+        { name: isHi?"सरसों":"Mustard", emoji:"🌻", score:76, note: isHi?"कम पानी में अच्छी, तेलहन के रूप में अच्छी कमाई।":"Water-efficient oilseed with strong market demand." },
+        { name: isHi?"चना":"Chickpea", emoji:"🫘", score:70, note: isHi?"मिट्टी सुधारती है, कम खाद चाहिए।":"Fixes nitrogen, low fertiliser need, good pulse prices." },
+        { name: isHi?"आलू":"Potato", emoji:"🥔", score:64, note: isHi?"ठंड में उगता है, नकदी फसल के रूप में अच्छा।":"High cash crop value, ready in 90 days." },
+        { name: isHi?"मसूर":"Lentil", emoji:"🟤", score:58, note: isHi?"दाल की मांग हमेशा रहती है, कम देखभाल।":"Consistent demand, minimal care required." },
+        { name: isHi?"मेथी":"Fenugreek", emoji:"🌿", score:52, note: isHi?"मसाला फसल, अच्छा भाव मिलता है।":"Spice crop with premium pricing and quick harvest." },
+        { name: isHi?"सूरजमुखी":"Sunflower", emoji:"🌻", score:46, note: isHi?"तेलहन फसल, देर से रबी में लगाई जा सकती है।":"Flexible oil crop that can extend into late Rabi." }
+      ];
+    }
+  } else if (c.includes('zaid') || c.includes('march') || (t > 30 && r < 500)) {
+    // Zaid / hot dry
+    topName = isHi ? "मूंग (Moong)" : "Moong Bean"; topEmoji = "🟢"; topConf = 82;
+    topWhy = isHi ? "जायद मौसम में मूंग सबसे तेज़ और लाभदायक फसल है। 60 दिन में तैयार होती है और मिट्टी भी सुधरती है।" : "Moong is the fastest and most profitable Zaid crop, ready in 60 days while naturally improving soil nitrogen.";
+    topProfit = isHi ? "₹15,000–₹22,000 प्रति एकड़" : "₹15,000–₹22,000 per acre";
+    topCost = isHi ? "₹5,000–₹7,000 प्रति एकड़" : "₹5,000–₹7,000 per acre";
+    topSeason = isHi ? "मार्च–अप्रैल में बुवाई, मई–जून में कटाई" : "Sow Mar–Apr, harvest May–Jun (55–65 days)";
+    alts = [
+      { name: isHi?"तरबूज":"Watermelon", emoji:"🍉", score:78, note: isHi?"गर्मी में जायद की बेहतरीन नकदी फसल।":"Top cash crop in summer with excellent market demand." },
+      { name: isHi?"खीरा":"Cucumber", emoji:"🥒", score:72, note: isHi?"जल्दी तैयार, सब्जी बाज़ार में अच्छा भाव।":"Fast-maturing, high vegetable market returns." },
+      { name: isHi?"भिंडी":"Okra (Bhindi)", emoji:"🫑", score:66, note: isHi?"गर्मी पसंद सब्जी, हर मौसम में मांग।":"Heat-loving vegetable, year-round market demand." },
+      { name: isHi?"लौकी":"Bottle Gourd", emoji:"🎃", score:60, note: isHi?"कम पानी में ठीक, स्थानीय बाज़ार में अच्छा।":"Low water needs, strong local market presence." },
+      { name: isHi?"तिल":"Sesame", emoji:"🌿", score:54, note: isHi?"गर्मी और सूखे में सबसे टिकाऊ फसल।":"Most drought-tolerant summer oilseed crop." },
+      { name: isHi?"मक्का (जायद)":"Summer Maize", emoji:"🌽", score:49, note: isHi?"जायद मक्का से अच्छी पैदावार और पशुचारा।":"Good yield and dual-use grain plus fodder." }
+    ];
+  } else if (s.includes('black') || s.includes('काली')) {
+    // Kharif + Black cotton soil
+    topName = isHi ? "कपास (Cotton)" : "Cotton"; topEmoji = "🪴"; topConf = 91;
+    topWhy = isHi ? "काली मिट्टी कपास के लिए सबसे आदर्श है। इस मिट्टी में नमी देर तक रहती है जो कपास को बहुत फायदेमंद है।" : "Black cotton soil is nature-made for cotton cultivation. Its moisture retention and nutrient profile perfectly match cotton's requirements.";
+    topProfit = isHi ? "₹35,000–₹55,000 प्रति एकड़" : "₹35,000–₹55,000 per acre";
+    topCost = isHi ? "₹15,000–₹20,000 प्रति एकड़" : "₹15,000–₹20,000 per acre";
+    topSeason = isHi ? "मई–जून में बुवाई, अक्टूबर–दिसंबर में कटाई" : "Sow May–Jun, harvest Oct–Dec (150–180 days)";
+    alts = [
+      { name: isHi?"सोयाबीन":"Soybean", emoji:"🌿", score:83, note: isHi?"काली मिट्टी में सोयाबीन बहुत अच्छी होती है, नाइट्रोजन भी बढ़ाती है।":"Thrives in black soil, fixes nitrogen and fetches premium export prices." },
+      { name: isHi?"ज्वार (Sorghum)":"Sorghum", emoji:"🌾", score:74, note: isHi?"सूखे में भी टिकती है, पशुचारा और अनाज दोनों।":"Drought-resilient dual-purpose grain and fodder crop." },
+      { name: isHi?"अरहर (Pigeon Pea)":"Pigeon Pea (Arhar)", emoji:"🫘", score:68, note: isHi?"काली मिट्टी में अरहर अच्छी पैदावार देती है।":"Good yield in black soil with strong daal market demand." },
+      { name: isHi?"मक्का":"Maize", emoji:"🌽", score:62, note: isHi?"खरीफ में अच्छा, बहुउद्देशीय फसल।":"Versatile Kharif crop with multiple market outlets." },
+      { name: isHi?"तिल":"Sesame", emoji:"🌿", score:56, note: isHi?"काली मिट्टी में तिल की उपज अच्छी होती है।":"Good sesame yield in black soil, premium oil prices." },
+      { name: isHi?"हल्दी":"Turmeric", emoji:"🟡", score:50, note: isHi?"मसाला फसल, काली मिट्टी में भी होती है।":"Premium spice crop with consistent export demand." }
+    ];
+  } else if (s.includes('sandy') || s.includes('रेत') || r < 500 || t > 35) {
+    // Sandy/arid conditions
+    topName = isHi ? "बाजरा (Pearl Millet)" : "Pearl Millet (Bajra)"; topEmoji = "🌾"; topConf = 86;
+    topWhy = isHi ? "रेतीली मिट्टी और कम बारिश में बाजरा सबसे टिकाऊ और लाभदायक फसल है। यह गर्मी और सूखे में भी अच्छी पैदावार देता है।" : "Bajra is the most resilient crop for sandy soil and low rainfall conditions. It withstands heat and drought while delivering reliable yield.";
+    topProfit = isHi ? "₹12,000–₹18,000 प्रति एकड़" : "₹12,000–₹18,000 per acre";
+    topCost = isHi ? "₹4,000–₹6,000 प्रति एकड़" : "₹4,000–₹6,000 per acre";
+    topSeason = isHi ? "जून–जुलाई में बुवाई, सितंबर–अक्टूबर में कटाई" : "Sow Jun–Jul, harvest Sep–Oct (70–90 days)";
+    alts = [
+      { name: isHi?"मूंगफली":"Groundnut", emoji:"🥜", score:81, note: isHi?"रेतीली मिट्टी में मूंगफली बेहतरीन होती है, तेलहन के रूप में अच्छा मूल्य।":"Sandy loam is ideal for groundnut; high oil content and premium prices." },
+      { name: isHi?"तिल":"Sesame", emoji:"🌿", score:74, note: isHi?"सूखे में सबसे ज्यादा टिकने वाली तेलहन फसल।":"Most drought-tolerant oilseed, premium export demand." },
+      { name: isHi?"अरंडी":"Castor", emoji:"🌿", score:67, note: isHi?"रेतीली और कम उपजाऊ मिट्टी में भी अच्छी पैदावार।":"Tolerates poor sandy soil, strong industrial demand." },
+      { name: isHi?"मोठ बीन":"Moth Bean", emoji:"🫘", score:61, note: isHi?"बहुत कम पानी में होने वाली दलहन फसल।":"Extremely drought-tolerant pulse, thrives in arid zones." },
+      { name: isHi?"ग्वार":"Guar (Cluster Bean)", emoji:"🌿", score:55, note: isHi?"रेगिस्तानी क्षेत्र की खास फसल, अच्छा निर्यात।":"Desert-region specialty with strong guar gum export market." },
+      { name: isHi?"सूरजमुखी":"Sunflower", emoji:"🌻", score:49, note: isHi?"कम पानी में भी अच्छा तेल और अच्छी कीमत।":"Moderate drought tolerance, good oil yield and prices." }
+    ];
+  } else if (r > 1200 || h > 75 || s.includes('clay') || s.includes('alluvial') || s.includes('जलोढ़')) {
+    // High rainfall / clay / alluvial - rice territory
+    topName = isHi ? "धान (Rice)" : "Paddy (Rice)"; topEmoji = "🌾"; topConf = 89;
+    topWhy = isHi ? "आपकी जलोढ़/चिकनी मिट्टी और अधिक वर्षा धान की खेती के लिए आदर्श है। उच्च नमी और पानी की अच्छी उपलब्धता से बेहतरीन पैदावार होगी।" : "Your high rainfall, clay or alluvial soil are perfectly suited for paddy. The moisture retention and water availability match rice's high water demands.";
+    topProfit = isHi ? "₹18,000–₹26,000 प्रति एकड़" : "₹18,000–₹26,000 per acre";
+    topCost = isHi ? "₹8,000–₹11,000 प्रति एकड़" : "₹8,000–₹11,000 per acre";
+    topSeason = isHi ? "जून–जुलाई में रोपाई, नवंबर में कटाई" : "Transplant Jun–Jul, harvest Nov (120–140 days)";
+    alts = [
+      { name: isHi?"जूट (Jute)":"Jute", emoji:"🌿", score:77, note: isHi?"अधिक नमी और बारिश में जूट बेहतरीन नकदी फसल है।":"Thrives in high humidity, strong fibre export demand." },
+      { name: isHi?"गन्ना":"Sugarcane", emoji:"🎋", score:71, note: isHi?"अधिक पानी उपलब्ध है तो गन्ना बहुत फायदेमंद है।":"Water-intensive but extremely profitable if water is available." },
+      { name: isHi?"केला":"Banana", emoji:"🍌", score:65, note: isHi?"उष्णकटिबंधीय क्षेत्र में केला बहुत अच्छा होता है।":"Excellent in tropical humid regions, year-round income." },
+      { name: isHi?"अरवी (Taro)":"Taro (Arvi)", emoji:"🌿", score:59, note: isHi?"नम मिट्टी में अरवी बहुत अच्छी उपज देती है।":"Thrives in moist conditions, specialty vegetable market." },
+      { name: isHi?"अदरक":"Ginger", emoji:"🟡", score:53, note: isHi?"उच्च नमी में अदरक की बेहतरीन पैदावार होती है।":"Premium spice, high value in humid tropical conditions." },
+      { name: isHi?"हल्दी":"Turmeric", emoji:"🟡", score:48, note: isHi?"नम क्षेत्रों में हल्दी अच्छी होती है, निर्यात मांग भी अच्छी।":"High-value spice crop with strong domestic and export demand." }
+    ];
+  } else {
+    // Default Kharif moderate conditions - maize or soybean
+    topName = isHi ? "मक्का (Maize)" : "Maize"; topEmoji = "🌽"; topConf = 83;
+    topWhy = isHi ? "आपकी दोमट मिट्टी और मध्यम वर्षा में मक्का सबसे संतुलित और लाभदायक फसल है। इसकी बाज़ार में हमेशा मांग रहती है।" : "Maize is the most balanced choice for your loamy soil and moderate rainfall. Strong market demand across food, feed and ethanol sectors ensures stable prices.";
+    topProfit = isHi ? "₹16,000–₹24,000 प्रति एकड़" : "₹16,000–₹24,000 per acre";
+    topCost = isHi ? "₹7,000–₹9,000 प्रति एकड़" : "₹7,000–₹9,000 per acre";
+    topSeason = isHi ? "जून में बुवाई, सितंबर–अक्टूबर में कटाई" : "Sow Jun, harvest Sep–Oct (90–110 days)";
+    alts = [
+      { name: isHi?"सोयाबीन":"Soybean", emoji:"🌿", score:78, note: isHi?"मिट्टी सुधारती है और मुनाफा भी अच्छा देती है।":"Nitrogen-fixer with excellent protein export market value." },
+      { name: isHi?"अरहर (Pigeon Pea)":"Pigeon Pea", emoji:"🫘", score:72, note: isHi?"कम देखभाल में अच्छी दाल की फसल।":"Low-maintenance, drought tolerant, strong pulse market." },
+      { name: isHi?"मूंगफली":"Groundnut", emoji:"🥜", score:65, note: isHi?"तेलहन के रूप में और नाश्ते में अच्छी मांग।":"High oil content, dual-purpose food and feed crop." },
+      { name: isHi?"धान":"Rice", emoji:"🌾", score:60, note: isHi?"पानी पर्याप्त हो तो धान भी लगाई जा सकती है।":"Viable if water supply is reliable throughout season." },
+      { name: isHi?"तिल":"Sesame", emoji:"🌿", score:54, note: isHi?"तेलहन फसल, कम लागत और अच्छी कीमत।":"Low-cost oilseed with premium domestic and export prices." },
+      { name: isHi?"प्याज":"Onion", emoji:"🧅", score:48, note: isHi?"नकदी फसल के रूप में प्याज बहुत फायदेमंद है।":"Volatile but high-reward cash crop with nationwide demand." }
+    ];
+  }
+
+  return {
+    topCrop: {
+      name: topName, confidence: topConf, emoji: topEmoji,
+      why: topWhy, profit: topProfit, cost: topCost, season: topSeason
+    },
+    alternatives: alts,
+    steps: isHi
+      ? [`${topName} के लिए खेत की अच्छी तरह जुताई करें और पुरानी फसल के अवशेष हटाएं।`,`प्रमाणित बीज नजदीकी कृषि केंद्र या KVK से खरीदें — अच्छी किस्म चुनें।`,`बुवाई से पहले मिट्टी परीक्षण करवाएं और जरूरत अनुसार खाद डालें।`,`समय पर सिंचाई करें और खरपतवार नियंत्रण का ध्यान रखें।`,`कीट-रोग की निगरानी करें और जरूरत पड़ने पर उचित दवाई का प्रयोग करें।`,`सही समय पर कटाई करें और नजदीकी मंडी में उचित भाव पर बेचें।`]
+      : [`Plough the field thoroughly and remove all previous crop residues for ${topName}.`,"Purchase certified seeds from a nearby agricultural centre or Krishi Vigyan Kendra.","Conduct a soil test before sowing and apply recommended fertiliser dosage.","Irrigate on schedule and maintain strict weed control, especially in early growth.","Monitor for pests and diseases regularly; apply appropriate treatment promptly.","Harvest at optimal maturity and sell at the nearest mandi for best price."],
+    insights: [
+      { type: "green", icon: "✅", title: isHi?"अनुकूल परिस्थिति":"Favourable Condition", text: isHi?`आपकी ${soil} मिट्टी और ${climate} मौसम ${topName} के लिए बहुत उपयुक्त है।`:`Your ${soil} and ${climate} conditions are well-suited for ${topName} cultivation.` },
+      { type: "yellow", icon: "⚠️", title: isHi?"ध्यान रखें":"Caution", text: isHi?"बुवाई के सही समय का ध्यान रखें — देर से बुवाई से पैदावार कम हो सकती है।":"Timing of sowing is critical — late sowing can significantly reduce your overall yield." },
+      { type: "blue", icon: "💧", title: isHi?"पानी प्रबंधन":"Water Management", text: isHi?`${water === 'Low' ? 'पानी कम है — ड्रिप सिंचाई या मल्चिंग अपनाएं।' : water === 'High' ? 'पानी भरपूर है — जल निकासी की व्यवस्था रखें।' : 'नियमित और उचित मात्रा में सिंचाई करें।'}`:`${water === 'Low' ? 'Water is scarce — consider drip irrigation or mulching to conserve moisture.' : water === 'High' ? 'Good water supply — ensure drainage channels are in place.' : 'Irrigate regularly at key growth stages for optimal yield.'}` },
+      { type: "red", icon: "🌱", title: isHi?"मिट्टी सुधार":"Soil Amendment", text: isHi?`${fertility === 'Low' ? 'मिट्टी की उपजाऊ शक्ति कम है — जैविक खाद और हरी खाद जरूर डालें।' : 'मिट्टी में समय-समय पर जैविक खाद मिलाएं — दीर्घकालिक फायदा होगा।'}`:`${fertility === 'Low' ? 'Soil fertility is low — apply organic compost and green manure before sowing.' : 'Regularly add organic matter to maintain and improve long-term soil health.'}` }
+    ],
+    risk: {
+      level: fertility === 'Low' && water === 'Low' ? 'Medium' : 'Low',
+      reason: isHi
+        ? (fertility === 'Low' && water === 'Low' ? `कम उपजाऊ मिट्टी और पानी की कमी से जोखिम थोड़ा बढ़ता है। सही खाद और सिंचाई से इसे कम किया जा सकता है।` : `${topName} एक सिद्ध फसल है जिसकी बाज़ार में अच्छी मांग है और सरकारी सहायता भी मिलती है।`)
+        : (fertility === 'Low' && water === 'Low' ? `Low fertility and limited water increase risk slightly. Proper fertilisation and efficient irrigation can mitigate this.` : `${topName} is a proven crop with stable market demand and consistent government support pricing.`)
+    },
+    marketplace: [
+      { item: isHi?`प्रमाणित ${topName} बीज`:`Certified ${topName} Seeds`, use: isHi?"अच्छी और एकसमान पैदावार के लिए जरूरी":"Essential for uniform germination and high yield", approx_price: "₹80–₹200/kg" },
+      { item: isHi?"यूरिया खाद":"Urea Fertiliser", use: isHi?"पौधों की बढ़वार और हरियाली के लिए":"Boosts vegetative growth and chlorophyll production", approx_price: "₹270/50kg bag" },
+      { item: isHi?"DAP खाद":"DAP Fertiliser", use: isHi?"जड़ विकास और फूल-फल बनाने में सहायक":"Promotes root development and flowering", approx_price: "₹1,350/50kg bag" },
+      { item: isHi?"कीटनाशक दवाई":"Recommended Pesticide", use: isHi?"कीट-रोग से फसल की सुरक्षा":"Protects crop from common pests and diseases", approx_price: "₹350–₹600" }
+    ]
+  };
+}
+
+function showResults(data) {
+  document.getElementById('loadingOverlay').classList.remove('active');
+  document.getElementById('formFields').classList.remove('hidden');
+  const s = STRINGS[currentLang];
+  const conf = data.topCrop.confidence;
+  const offset = 283 - (conf / 100) * 283;
+
+  const altCards = data.alternatives.map((alt, i) => `
+    <div class="crop-card">
+      <div class="crop-card-rank">${s.altRanks[i]}</div>
+      <div class="crop-card-name">${alt.emoji} ${alt.name}</div>
+      <div class="crop-card-note">${alt.note}</div>
+      <div class="score-bar-wrap">
+        <div class="score-bar"><div class="score-fill" data-width="${alt.score}%" style="width:0%"></div></div>
+        <span class="score-num">${alt.score}%</span>
+      </div>
+    </div>`).join('');
+
+  const stepsHtml = data.steps.map((st, i) => `
+    <div class="step-item">
+      <div class="step-num">${i + 1}</div>
+      <div class="step-text">${st}</div>
+    </div>`).join('');
+
+  const insightsHtml = data.insights.map(ins => `
+    <div class="insight-item">
+      <div class="insight-icon ${ins.type}">${ins.icon}</div>
+      <div class="insight-text"><strong>${ins.title}</strong><span>${ins.text}</span></div>
+    </div>`).join('');
+
+  const riskClass = data.risk.level === 'Low' ? 'risk-low' : data.risk.level === 'Medium' ? 'risk-medium' : 'risk-high';
+  const riskLabel = data.risk.level === 'Low' ? s.riskLow : data.risk.level === 'Medium' ? s.riskMed : s.riskHigh;
+
+  const marketHtml = data.marketplace.map(m => `
+    <div class="market-item">
+      <div class="market-name">${m.item}</div>
+      <div class="market-use">${m.use}</div>
+      <div class="market-price">${m.approx_price}</div>
+    </div>`).join('');
+
+  const prevCrop = lastFormData.prevCrop;
+  let rotationHtml = '';
+  if (prevCrop) {
+    const rotData = data.rotation || getCropRotationData(prevCrop, currentLang === 'hi');
+    rotationHtml = buildRotationPanel(prevCrop, rotData, currentLang === 'hi');
+  }
+
+  document.getElementById('resultsContent').innerHTML = `
+    <div class="top-crop-card">
+      <div>
+        <div class="top-badge">${s.topBadge}</div>
+        <div class="top-crop-name">${data.topCrop.emoji} ${data.topCrop.name}</div>
+        <div class="top-crop-desc">${data.topCrop.why}</div>
+        <div class="top-crop-meta">
+          <span>📅 ${data.topCrop.season}</span>
+          <span>${s.profitLabel} ${data.topCrop.profit}</span>
+          <span>${s.costLabel} ${data.topCrop.cost}</span>
+        </div>
+      </div>
+      <div class="confidence-ring">
+        <svg viewBox="0 0 100 100">
+          <circle class="ring-bg" cx="50" cy="50" r="45"/>
+          <circle class="ring-fill" id="ringFill" cx="50" cy="50" r="45" stroke-dashoffset="283"/>
+        </svg>
+        <div class="ring-label">
+          <span class="ring-pct" id="ringPct">0%</span>
+          <span class="ring-text">${s.ringText}</span>
+        </div>
+      </div>
+    </div>
+    <div class="crops-grid">${altCards}</div>
+    <div class="steps-section">
+      <div class="section-heading">${s.stepsTitle}</div>
+      <div class="steps-list">${stepsHtml}</div>
+    </div>
+    <div class="insights-panel">
+      <div class="section-heading">${s.insightsTitle}</div>
+      <div class="insights-grid">${insightsHtml}</div>
+    </div>
+    <div class="risk-panel">
+      <div><div class="risk-col-label">${s.riskLevelLabel}</div><span class="risk-badge ${riskClass}">${riskLabel}</span></div>
+      <div><div class="risk-col-label">${s.riskReasonLabel}</div><div class="risk-reason">${data.risk.reason}</div></div>
+    </div>
+    <div class="market-panel">
+      <div class="section-heading">${s.marketTitle}</div>
+      <div class="market-grid">${marketHtml}</div>
+    </div>
+    ${rotationHtml}
+    <div class="download-row">
+      <button class="btn-download" id="downloadBtn" onclick="downloadPDF()">
+        <svg viewBox="0 0 24 24"><path d="M12 16l-6-6h4V4h4v6h4l-6 6zm-7 2h14v2H5v-2z"/></svg>
+        <span class="dl-label">${s.downloadBtn}</span>
+      </button>
+    </div>`;
+
+  const resultsEl = document.getElementById('results');
+  resultsEl.classList.add('visible');
+  resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  setTimeout(() => {
+    document.getElementById('ringFill').style.strokeDashoffset = offset;
+    animateCounter(document.getElementById('ringPct'), 0, conf, 1200);
+  }, 400);
+  setTimeout(() => { document.querySelectorAll('.score-fill').forEach(b => { b.style.width = b.dataset.width; }); }, 600);
+}
+
+function getCropRotationData(prevCrop, isHi) {
+  const rotationMap = {
+    Rice: {
+      suggestions: [
+        { name: isHi ? 'गेहूं' : 'Wheat', emoji: '🌾', reason: isHi ? 'धान के बाद गेहूं एक आदर्श फसल है — मिट्टी में नमी बनी रहती है और उपज अच्छी होती है।' : 'Wheat thrives after rice as residual moisture and nutrients support early growth.' },
+        { name: isHi ? 'दलहन (मसूर/चना)' : 'Pulses (Lentil/Chickpea)', emoji: '🫘', reason: isHi ? 'दलहन मिट्टी में नाइट्रोजन बढ़ाती है जो धान से कम हो जाता है।' : 'Pulses fix atmospheric nitrogen, replenishing what rice depletes from the soil.' }
+      ],
+      soilBenefit: isHi ? 'धान के बाद गेहूं या दलहन लगाने से मिट्टी में नाइट्रोजन की कमी पूरी होती है। दलहन की जड़ें हवा से नाइट्रोजन लेकर मिट्टी को उपजाऊ बनाती हैं, जिससे अगली फसल में खाद की जरूरत कम पड़ती है।' : 'Rotating rice with wheat or pulses restores nitrogen balance. Pulses fix atmospheric nitrogen through root nodules, significantly reducing the need for chemical fertilisers in the next season.'
+    },
+    Wheat: {
+      suggestions: [
+        { name: isHi ? 'दलहन (मूंग/अरहर)' : 'Pulses (Moong/Arhar)', emoji: '🫘', reason: isHi ? 'गेहूं भारी मात्रा में नाइट्रोजन खींचता है — दलहन इसे वापस मिट्टी में लौटाती है।' : 'Wheat heavily depletes nitrogen; pulses naturally restore it through biological fixation.' },
+        { name: isHi ? 'तिलहन (सरसों/सूरजमुखी)' : 'Oilseeds (Mustard/Sunflower)', emoji: '🌻', reason: isHi ? 'तिलहन की गहरी जड़ें मिट्टी को भुरभुरी बनाती हैं और खरपतवार कम होते हैं।' : 'Oilseeds have deep roots that improve soil structure and naturally suppress weeds.' }
+      ],
+      soilBenefit: isHi ? 'गेहूं के बाद दलहन या तिलहन बोने से मिट्टी की ऊपरी परत में खोया पोषण वापस आता है। दलहन नाइट्रोजन स्थिरीकरण करती है और तिलहन की जड़ें मिट्टी को गहराई तक ढीला करती हैं — इससे मिट्टी की सेहत लंबे समय तक बनी रहती है।' : 'Following wheat with pulses or oilseeds restores top-soil nutrients. Pulses fix nitrogen biologically, while oilseed deep-root systems break compaction and improve aeration, sustaining long-term soil productivity.'
+    },
+    Maize: {
+      suggestions: [
+        { name: isHi ? 'फलीदार फसल (सोयाबीन)' : 'Legumes (Soybean)', emoji: '🌿', reason: isHi ? 'मक्का के बाद सोयाबीन मिट्टी में नाइट्रोजन की भरपाई करती है।' : 'Soybean after maize replenishes nitrogen and breaks the pest cycle effectively.' },
+        { name: isHi ? 'मूंगफली' : 'Groundnut', emoji: '🥜', reason: isHi ? 'मूंगफली मिट्टी की ऊपरी परत को सुधारती है और साथ में अच्छी आमदनी देती है।' : 'Groundnut improves topsoil structure and provides an additional revenue stream.' }
+      ],
+      soilBenefit: isHi ? 'मक्का के बाद फलीदार फसल (सोयाबीन, मूंगफली) लगाना बहुत फायदेमंद है। मक्का मिट्टी से काफी पोषण खींचती है, और फलीदार फसलें नाइट्रोजन वापस जोड़ती हैं। इससे कीट-रोग का चक्र भी टूटता है और अगले सीजन में उर्वरक की लागत घटती है।' : 'Legumes after maize are highly effective at restoring soil health. Maize exhausts soil nutrients rapidly; legumes biologically fix nitrogen, break pest and disease cycles, and reduce fertiliser costs for the next crop significantly.'
+    },
+    Sugarcane: {
+      suggestions: [
+        { name: isHi ? 'गेहूं' : 'Wheat', emoji: '🌾', reason: isHi ? 'गन्ने के बाद गेहूं मिट्टी को आराम देता है और अच्छी पैदावार देता है।' : 'Wheat after sugarcane allows soil recovery while providing a profitable Rabi harvest.' },
+        { name: isHi ? 'दलहन (मटर/चना)' : 'Pulses (Pea/Chickpea)', emoji: '🫛', reason: isHi ? 'दलहन मिट्टी में नाइट्रोजन और जीवाणुओं की संख्या बढ़ाती है।' : 'Pulses enrich depleted soils with nitrogen and beneficial microbial activity.' }
+      ],
+      soilBenefit: isHi ? 'गन्ना मिट्टी से बहुत ज्यादा पोषण और पानी खींचता है। इसके बाद गेहूं या दलहन लगाने से मिट्टी को रिकवर होने का मौका मिलता है। दलहन मिट्टी में नाइट्रोजन और जैविक पदार्थ बढ़ाती है, जिससे मिट्टी की उपजाऊ शक्ति वापस आती है।' : 'Sugarcane heavily depletes soil nutrients and water reserves. Following it with wheat or pulses allows recovery. Pulses particularly help rebuild nitrogen content and organic matter, restoring fertility for future high-demand crops.'
+    },
+    Cotton: {
+      suggestions: [
+        { name: isHi ? 'दलहन (चना/मसूर)' : 'Pulses (Chickpea/Lentil)', emoji: '🫘', reason: isHi ? 'कपास के बाद दलहन मिट्टी में नाइट्रोजन और जैविक पदार्थ वापस लाती है।' : 'Pulses restore nitrogen and organic matter that cotton removes from the soil.' },
+        { name: isHi ? 'सोयाबीन' : 'Soybean', emoji: '🌿', reason: isHi ? 'सोयाबीन कपास के कीट-रोग चक्र को तोड़ती है और मिट्टी सुधारती है।' : 'Soybean breaks the bollworm pest cycle and significantly improves soil structure.' }
+      ],
+      soilBenefit: isHi ? 'कपास मिट्टी की ऊपरी परत से भरपूर पोषण खींचती है और खेत में कीट-रोगों का खतरा बढ़ाती है। इसके बाद दलहन या सोयाबीन लगाने से न केवल मिट्टी में नाइट्रोजन की कमी पूरी होती है, बल्कि कपास के कीटों का चक्र भी टूटता है।' : 'Cotton exhausts topsoil nutrients and increases pest pressure. Rotating with pulses or soybean restores nitrogen biologically and breaks the pest cycle, reducing dependency on pesticides in subsequent seasons.'
+    },
+    Soybean: {
+      suggestions: [
+        { name: isHi ? 'गेहूं' : 'Wheat', emoji: '🌾', reason: isHi ? 'सोयाबीन के बाद गेहूं बहुत अच्छा उगता है — नाइट्रोजन की उपलब्धता अधिक रहती है।' : 'Wheat benefits enormously from the residual nitrogen left by soybean in the soil.' },
+        { name: isHi ? 'मक्का' : 'Maize', emoji: '🌽', reason: isHi ? 'मक्का सोयाबीन की उपजाऊ मिट्टी का पूरा फायदा उठाती है और अच्छी पैदावार देती है।' : 'Maize thrives in soybean-enriched soil and provides excellent yield with lower input costs.' }
+      ],
+      soilBenefit: isHi ? 'सोयाबीन एक नाइट्रोजन-स्थिरीकरण करने वाली फसल है जो मिट्टी को समृद्ध करती है। इसके बाद गेहूं या मक्का लगाने से उर्वरक की जरूरत कम होती है और पैदावार अच्छी रहती है। यह फसल चक्र दीर्घकालिक मिट्टी स्वास्थ्य के लिए आदर्श है।' : 'Soybean enriches soil through biological nitrogen fixation. Planting wheat or maize after soybean capitalises on this nitrogen surplus, reducing fertiliser requirements and boosting yield — an ideal sustainable rotation for long-term soil health.'
+    },
+    Pulses: {
+      suggestions: [
+        { name: isHi ? 'धान' : 'Rice', emoji: '🌾', reason: isHi ? 'दलहन के बाद धान उगाने से मिट्टी में नाइट्रोजन की अच्छी उपलब्धता रहती है।' : 'Rice benefits from the nitrogen-rich soil that pulses leave behind.' },
+        { name: isHi ? 'गेहूं' : 'Wheat', emoji: '🌾', reason: isHi ? 'दलहन के बाद गेहूं में रासायनिक खाद की कम जरूरत होती है और पैदावार बेहतर रहती है।' : 'Wheat after pulses needs less fertiliser and consistently produces higher yields.' }
+      ],
+      soilBenefit: isHi ? 'दलहन मिट्टी के लिए सबसे फायदेमंद फसल है। इसकी जड़ों में नाइट्रोजन-स्थिरीकरण करने वाले जीवाणु होते हैं जो प्राकृतिक रूप से मिट्टी को उपजाऊ बनाते हैं। इसके बाद धान या गेहूं लगाने से रासायनिक खाद की जरूरत काफी कम हो जाती है।' : 'Pulses are the most soil-beneficial crops — their root nodules fix atmospheric nitrogen naturally. Following pulses with rice or wheat dramatically reduces chemical fertiliser needs and improves overall soil microbial health.'
+    }
+  };
+
+  const key = Object.keys(rotationMap).find(k => prevCrop && prevCrop.toLowerCase().includes(k.toLowerCase()));
+  if (!key) {
+    return {
+      suggestions: [
+        { name: isHi ? 'दलहन (मूंग/चना)' : 'Pulses (Moong/Chickpea)', emoji: '🫘', reason: isHi ? 'दलहन मिट्टी में नाइट्रोजन बढ़ाती है और लगभग हर फसल के बाद फायदेमंद रहती है।' : 'Pulses fix nitrogen and benefit soil health after any previous crop.' },
+        { name: isHi ? 'सब्जियां (मौसमी)' : 'Seasonal Vegetables', emoji: '🥦', reason: isHi ? 'मौसमी सब्जियां अलग पोषण इस्तेमाल करती हैं और मिट्टी को आराम देती हैं।' : 'Vegetables use different soil nutrients, giving the soil a natural resting cycle.' }
+      ],
+      soilBenefit: isHi ? 'फसल चक्र अपनाने से मिट्टी की उपजाऊ शक्ति लंबे समय तक बनी रहती है। एक ही फसल बार-बार लगाने से मिट्टी में पोषण की कमी होती है और कीट-रोगों का खतरा बढ़ता है। दलहन जैसी फसल शामिल करने से मिट्टी प्राकृतिक रूप से सुधरती है।' : 'Crop rotation maintains long-term soil productivity. Growing the same crop repeatedly depletes specific nutrients and builds pest pressure. Including a legume in your rotation naturally restores soil fertility and reduces input costs.'
+    };
+  }
+  return rotationMap[key];
+}
+
+function buildRotationPanel(prevCrop, rotationData, isHi) {
+  const s = STRINGS[currentLang];
+  const prevEmojis = { Rice:'🌾', Wheat:'🌾', Maize:'🌽', Sugarcane:'🎋', Cotton:'🪴', Soybean:'🌿', Pulses:'🫘', Vegetables:'🥦', Other:'🌱' };
+  const prevKey = Object.keys(prevEmojis).find(k => prevCrop && prevCrop.toLowerCase().includes(k.toLowerCase())) || 'Other';
+  const prevEmoji = prevEmojis[prevKey] || '🌱';
+
+  const suggestionsHtml = rotationData.suggestions.map(s => `
+    <div class="rotation-suggestion">
+      <div class="rs-icon">${s.emoji}</div>
+      <div>
+        <div class="rs-name">${s.name}</div>
+        <div class="rs-desc">${s.reason}</div>
+      </div>
+    </div>`).join('');
+
+  return `
+    <div class="rotation-panel">
+      <div class="rotation-header">
+        <h3>${s.rotationTitle}</h3>
+        <span class="rotation-badge">${s.rotationBadge}</span>
+      </div>
+      <div class="rotation-flow">
+        <div class="rotation-crop prev">
+          <div class="r-emoji">${prevEmoji}</div>
+          <div class="r-label">${s.rotationPrevLabel}</div>
+          <div class="r-name">${prevCrop}</div>
+        </div>
+        <div class="rotation-arrow">→</div>
+        <div class="rotation-crop next">
+          <div class="r-emoji">🔄</div>
+          <div class="r-label">${s.rotationNextLabel}</div>
+          <div class="r-name">${rotationData.suggestions.map(s=>s.name).join(' / ')}</div>
+        </div>
+      </div>
+      <div class="rotation-suggestions">${suggestionsHtml}</div>
+      <div class="rotation-benefit"><strong>${s.rotationBenefitLabel}</strong> ${rotationData.soilBenefit}</div>
+    </div>`;
+}
+
+async function downloadPDF() {
+  const s = STRINGS[currentLang];
+  const btn = document.getElementById('downloadBtn');
+  btn.classList.add('generating');
+  btn.querySelector('.dl-label').textContent = s.downloadingBtn;
+
+  if (!lastResult) { btn.classList.remove('generating'); return; }
+
+  const isHi = currentLang === 'hi';
+  const r = lastResult;
+  const fd = lastFormData;
+  const now = new Date().toLocaleDateString(isHi ? 'hi-IN' : 'en-IN', { year:'numeric', month:'long', day:'numeric' });
+
+  const rotData = fd.prevCrop ? getCropRotationData(fd.prevCrop, isHi) : null;
+  const rotSection = rotData ? `
+    <div class="section">
+      <h2>🔄 ${isHi ? 'फसल चक्र सलाह' : 'Crop Rotation Advice'}</h2>
+      <p><strong>${isHi ? 'पिछली फसल' : 'Previous Crop'}:</strong> ${fd.prevCrop}</p>
+      <p><strong>${isHi ? 'सुझाव' : 'Suggestions'}:</strong></p>
+      <ul>${rotData.suggestions.map(s=>`<li><strong>${s.emoji} ${s.name}:</strong> ${s.reason}</li>`).join('')}</ul>
+      <p style="background:#f0f7f2;border-left:4px solid #2d5a3d;padding:12px 16px;border-radius:0 8px 8px 0;margin-top:12px;font-style:italic;">${rotData.soilBenefit}</p>
+    </div>` : '';
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Krishi Report</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: 'Segoe UI', sans-serif; color: #2c1810; background:#fff; padding: 40px; font-size:13px; }
+  .header { display:flex; justify-content:space-between; align-items:center; border-bottom:3px solid #2d5a3d; padding-bottom:20px; margin-bottom:28px; }
+  .logo-h { font-size:28px; font-weight:900; color:#2d5a3d; }
+  .logo-sub { font-size:11px; color:#8b5e3c; letter-spacing:2px; text-transform:uppercase; }
+  .date { font-size:11px; color:#8b5e3c; text-align:right; }
+  .top-box { background:#2d5a3d; color:#f7f1e8; border-radius:14px; padding:24px 28px; margin-bottom:24px; display:flex; justify-content:space-between; align-items:flex-start; }
+  .top-crop-name { font-size:32px; font-weight:900; margin-bottom:8px; }
+  .top-why { font-size:13px; opacity:0.8; line-height:1.6; max-width:500px; }
+  .top-meta { font-size:12px; margin-top:12px; display:flex; gap:20px; }
+  .conf-box { text-align:center; background:rgba(255,255,255,0.12); border-radius:10px; padding:14px 20px; }
+  .conf-num { font-size:28px; font-weight:900; }
+  .conf-lbl { font-size:10px; opacity:0.7; letter-spacing:1px; text-transform:uppercase; }
+  .section { background:#f9f6f1; border-radius:12px; padding:20px 24px; margin-bottom:18px; }
+  .section h2 { font-size:16px; font-weight:700; color:#2d5a3d; margin-bottom:14px; border-bottom:1px solid rgba(45,90,61,0.15); padding-bottom:8px; }
+  .field-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:4px; }
+  .field-item { background:#fff; border:1px solid rgba(92,61,46,0.12); border-radius:8px; padding:10px 14px; }
+  .field-label { font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:#c9a96e; margin-bottom:3px; }
+  .field-val { font-size:13px; font-weight:600; color:#2c1810; }
+  .alt-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .alt-card { background:#fff; border:1.5px solid rgba(92,61,46,0.12); border-radius:10px; padding:14px; }
+  .alt-name { font-size:14px; font-weight:700; margin-bottom:4px; }
+  .alt-score { font-size:11px; color:#4a7c59; font-weight:600; margin-bottom:6px; }
+  .alt-note { font-size:11px; color:#5c3d2e; line-height:1.5; }
+  .steps-list { display:flex; flex-direction:column; gap:10px; }
+  .step { display:flex; gap:12px; align-items:flex-start; }
+  .step-n { min-width:26px; height:26px; background:#2d5a3d; color:#a8c5a0; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0; }
+  .step-t { font-size:13px; color:#5c3d2e; line-height:1.5; padding-top:4px; }
+  .risk-row { display:flex; gap:20px; flex-wrap:wrap; }
+  .risk-badge { display:inline-block; padding:6px 16px; border-radius:100px; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; font-weight:600; }
+  .risk-low { background:rgba(74,124,89,0.12); color:#2d5a3d; }
+  .risk-medium { background:rgba(240,165,0,0.12); color:#7a5500; }
+  .risk-high { background:rgba(232,93,42,0.12); color:#8b2600; }
+  .market-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .market-item { background:#fff; border:1px solid rgba(92,61,46,0.1); border-radius:8px; padding:12px; }
+  .market-name { font-size:13px; font-weight:700; margin-bottom:3px; }
+  .market-use { font-size:11px; color:#5c3d2e; margin-bottom:6px; line-height:1.4; }
+  .market-price { font-size:12px; color:#2d5a3d; font-weight:600; }
+  ul { padding-left:18px; }
+  ul li { margin-bottom:8px; font-size:13px; line-height:1.5; color:#5c3d2e; }
+  .footer { text-align:center; margin-top:28px; padding-top:16px; border-top:1px solid rgba(92,61,46,0.15); font-size:11px; color:#c9a96e; letter-spacing:1px; }
+  @media print { body { padding:20px; } }
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <div class="logo-h">🌾 Krishi</div>
+    <div class="logo-sub">${isHi ? 'स्मार्ट फसल सिफारिश रिपोर्ट' : 'Smart Crop Recommendation Report'}</div>
+  </div>
+  <div class="date">${isHi ? 'दिनांक' : 'Date'}: ${now}</div>
+</div>
+
+<div class="top-box">
+  <div>
+    <div style="font-size:11px;letter-spacing:2px;opacity:0.6;text-transform:uppercase;margin-bottom:8px;">${isHi ? 'सबसे अच्छी फसल' : 'Top Recommendation'}</div>
+    <div class="top-crop-name">${r.topCrop.emoji} ${r.topCrop.name}</div>
+    <div class="top-why">${r.topCrop.why}</div>
+    <div class="top-meta">
+      <span>📅 ${r.topCrop.season}</span>
+      <span>💰 ${r.topCrop.profit}</span>
+      <span>🏷️ ${r.topCrop.cost}</span>
+    </div>
+  </div>
+  <div class="conf-box">
+    <div class="conf-num">${r.topCrop.confidence}%</div>
+    <div class="conf-lbl">${isHi ? 'मेल' : 'Match'}</div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>📋 ${isHi ? 'खेत की जानकारी' : 'Field Details'}</h2>
+  <div class="field-grid">
+    <div class="field-item"><div class="field-label">${isHi ? 'मिट्टी' : 'Soil'}</div><div class="field-val">${fd.soil || '—'}</div></div>
+    <div class="field-item"><div class="field-label">${isHi ? 'मौसम' : 'Season'}</div><div class="field-val">${fd.climate || '—'}</div></div>
+    <div class="field-item"><div class="field-label">${isHi ? 'राज्य' : 'Region'}</div><div class="field-val">${fd.region || '—'}</div></div>
+    <div class="field-item"><div class="field-label">${isHi ? 'तापमान' : 'Temp'}</div><div class="field-val">${fd.temp}°C</div></div>
+    <div class="field-item"><div class="field-label">${isHi ? 'नमी' : 'Humidity'}</div><div class="field-val">${fd.humidity}%</div></div>
+    <div class="field-item"><div class="field-label">${isHi ? 'वर्षा' : 'Rainfall'}</div><div class="field-val">${fd.rainfall} mm</div></div>
+    <div class="field-item"><div class="field-label">${isHi ? 'उपजाऊपन' : 'Fertility'}</div><div class="field-val">${fd.fertility}</div></div>
+    <div class="field-item"><div class="field-label">${isHi ? 'पानी' : 'Water'}</div><div class="field-val">${fd.water}</div></div>
+    ${fd.fieldSize ? `<div class="field-item"><div class="field-label">${isHi ? 'क्षेत्रफल' : 'Field Size'}</div><div class="field-val">${fd.fieldSize} ${isHi ? 'एकड़' : 'acres'}</div></div>` : ''}
+  </div>
+</div>
+
+<div class="section">
+  <h2>🌿 ${isHi ? 'वैकल्पिक फसलें' : 'Alternative Crops'}</h2>
+  <div class="alt-grid">
+    ${r.alternatives.map(a=>`<div class="alt-card"><div class="alt-name">${a.emoji} ${a.name}</div><div class="alt-score">${a.score}% ${isHi?'मेल':'match'}</div><div class="alt-note">${a.note}</div></div>`).join('')}
+  </div>
+</div>
+
+<div class="section">
+  <h2>📋 ${isHi ? 'कदम-दर-कदम गाइड' : 'Step-by-Step Guide'}</h2>
+  <div class="steps-list">
+    ${r.steps.map((st,i)=>`<div class="step"><div class="step-n">${i+1}</div><div class="step-t">${st}</div></div>`).join('')}
+  </div>
+</div>
+
+${rotSection}
+
+<div class="section">
+  <h2>⚠️ ${isHi ? 'जोखिम और सलाह' : 'Risk Assessment'}</h2>
+  <div class="risk-row">
+    <div>
+      <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#c9a96e;margin-bottom:8px;">${isHi ? 'जोखिम स्तर' : 'Risk Level'}</div>
+      <span class="risk-badge risk-${r.risk.level.toLowerCase()}">${r.risk.level}</span>
+    </div>
+    <div style="flex:1">
+      <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#c9a96e;margin-bottom:8px;">${isHi ? 'कारण' : 'Reason'}</div>
+      <div style="font-size:13px;color:#5c3d2e;line-height:1.6;">${r.risk.reason}</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>🛒 ${isHi ? 'क्या खरीदना होगा' : 'What to Buy'}</h2>
+  <div class="market-grid">
+    ${r.marketplace.map(m=>`<div class="market-item"><div class="market-name">${m.item}</div><div class="market-use">${m.use}</div><div class="market-price">${m.approx_price}</div></div>`).join('')}
+  </div>
+</div>
+
+<div class="footer">Krishi — AI-Powered Crop Advisory · ${now}</div>
+</body></html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  setTimeout(() => {
+    win.print();
+    btn.classList.remove('generating');
+    btn.querySelector('.dl-label').textContent = s.downloadBtn;
+  }, 800);
+}
+function animateCounter(el, from, to, dur) {
+  const t0 = performance.now();
+  (function tick(now) {
+    const p = Math.min((now - t0) / dur, 1);
+    el.textContent = Math.round(from + (to - from) * (1 - Math.pow(1 - p, 3))) + '%';
+    if (p < 1) requestAnimationFrame(tick);
+  })(t0);
+}
+
+function resetForm() {
+  const r = document.getElementById('results');
+  r.classList.remove('visible');
+  setTimeout(() => { document.getElementById('resultsContent').innerHTML = ''; window.scrollTo({ top: 0, behavior: 'smooth' }); }, 300);
+}
+</script>
+</body>
+</html>
